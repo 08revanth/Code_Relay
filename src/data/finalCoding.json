@@ -1,0 +1,23 @@
+[
+    {
+        "id": 1,
+        "description": "Sum unique numbers. Input: Space separated integers.",
+        "testInput": "1 2 2 3 3 4",
+        "expectedOutput": "5",
+        "hint": "RISE"
+    },
+    {
+        "id": 2,
+        "description": "Reverse the string. Input: A single word.",
+        "testInput": "HELLO",
+        "expectedOutput": "OLLEH",
+        "hint": "TO"
+    },
+    {
+        "id": 3,
+        "description": "Count vowels. Input: A string.",
+        "testInput": "APPLE",
+        "expectedOutput": "2",
+        "hint": "GLORY"
+    }
+]

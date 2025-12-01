@@ -1,0 +1,27 @@
+[
+    {
+        "id": 1,
+        "question": "Find QR at library.",
+        "answer": "1960"
+    },
+    {
+        "id": 2,
+        "question": "Find QR at canteen.",
+        "answer": "SPARK"
+    },
+    {
+        "id": 3,
+        "question": "Find QR at auditorium.",
+        "answer": "INNOVATE"
+    },
+    {
+        "id": 4,
+        "question": "Find QR at main gate.",
+        "answer": "WELCOME"
+    },
+    {
+        "id": 5,
+        "question": "Find QR at sports complex.",
+        "answer": "VICTORY"
+    }
+]

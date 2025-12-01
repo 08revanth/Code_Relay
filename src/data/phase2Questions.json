@@ -1,0 +1,17 @@
+[
+    {
+        "id": 1,
+        "code": "int a=5; int b=10; cout<<a+b;",
+        "answer": "15"
+    },
+    {
+        "id": 2,
+        "code": "for(int i=0; i<3; i++) cout<<i;",
+        "answer": "012"
+    },
+    {
+        "id": 3,
+        "code": "int x=10; if(x>5) cout<<'A'; else cout<<'B';",
+        "answer": "A"
+    }
+]
