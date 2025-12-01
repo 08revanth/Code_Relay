@@ -19,9 +19,10 @@ services:
 
   workers:
     image: judge0/judge0:1.13.0
-    command: ["./scripts/workers"]
+    command: [ "./scripts/workers" ]
     volumes:
       - ./judge0.conf:/judge0.conf:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     privileged: true
     restart: always
     environment:
@@ -44,7 +45,7 @@ services:
 
   redis:
     image: redis:6.0
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "judge0"]
+    command: [ "redis-server", "--appendonly", "yes", "--requirepass", "judge0" ]
     restart: always
     volumes:
       - redis-data:/data

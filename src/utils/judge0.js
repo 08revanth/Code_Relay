@@ -1,57 +1,75 @@
 import axios from 'axios';
 
-const JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"; // Or your self-hosted instance
-// NOTE: For a real event, you should use a self-hosted instance or a paid plan to avoid rate limits.
-// We will use the public CE API for now, but keys should be managed via env vars.
-// Since this is a frontend-only app, keys will be exposed. 
-// For this demo, we assume a self-hosted instance or we'll use a placeholder if no key is provided.
-
-const API_KEY = ""; // User should provide this or we use a free tier if available without key (limited)
-const API_HOST = "judge0-ce.p.rapidapi.com";
+// Use the proxy path defined in vite.config.js
+const JUDGE0_API_URL = "/api/judge0"; 
 
 const headers = {
   "content-type": "application/json",
   "Content-Type": "application/json",
-  // "X-RapidAPI-Key": API_KEY,
-  // "X-RapidAPI-Host": API_HOST
 };
 
-// If using a self-hosted instance (recommended for events):
-const USE_SELF_HOSTED = true; 
-const SELF_HOSTED_URL = "http://localhost:2358"; // Default Judge0 Docker port
-
-const getBaseUrl = () => USE_SELF_HOSTED ? SELF_HOSTED_URL : JUDGE0_API_URL;
-const getHeaders = () => USE_SELF_HOSTED ? { "Content-Type": "application/json" } : headers;
-
 export const runCode = async (source_code, language_id, stdin = "") => {
+  console.log("🚀 Preparing to send code to Judge0...");
   try {
-    const baseUrl = getBaseUrl();
-    const headers = getHeaders();
-
-    // 1. Submit Code
-    const submissionResponse = await axios.post(`${baseUrl}/submissions?base64_encoded=false&wait=true`, {
+    // 1. Submit Code (wait=false to get token immediately)
+    console.log("POSTing submission...");
+    const submissionResponse = await axios.post(`${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`, {
       source_code,
       language_id,
       stdin,
       redirect_stderr_to_stdout: true
-    }, { headers });
+    }, { 
+      headers,
+      timeout: 10000 // 10s timeout for submission
+    });
 
-    const result = submissionResponse.data;
+    const token = submissionResponse.data.token;
+    console.log("Token received:", token);
+    if (!token) throw new Error("No token received from Judge0");
 
-    // If wait=true is supported and works, we get the result immediately.
-    // Otherwise, we might need to poll. Judge0 CE usually supports wait=true.
+    // 2. Poll for results
+    let result = null;
+    let attempts = 0;
+    const maxAttempts = 40; // 40 * 500ms = 20 seconds max
+
+    while (attempts < maxAttempts) {
+      console.log(`Polling attempt ${attempts + 1}/${maxAttempts}...`);
+      const statusResponse = await axios.get(`${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`, { 
+        headers,
+        timeout: 5000 
+      });
+      result = statusResponse.data;
+
+      // Status 1=In Queue, 2=Processing, 3=Accepted, >3=Error/Wrong Answer
+      if (result.status.id >= 3) {
+        console.log("Execution finished with status:", result.status.description);
+        break;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      attempts++;
+    }
+
+    if (!result || result.status.id < 3) {
+      console.error("Polling timed out.");
+      return { error: "Execution timed out. Judge0 is taking too long." };
+    }
 
     return {
       stdout: result.stdout || "",
       stderr: result.stderr || "",
       compile_output: result.compile_output || "",
-      status: result.status
+      status: result.status,
+      message: result.message || ""
     };
 
   } catch (error) {
-    console.error("Judge0 Error:", error);
+    console.error("Judge0 Error Details:", error);
+    if (error.code === 'ECONNABORTED') {
+      return { error: "Network timeout. Is Judge0 running?" };
+    }
     return {
-      error: "Execution failed. Check API connection."
+      error: `Execution failed: ${error.message}`
     };
   }
 };
