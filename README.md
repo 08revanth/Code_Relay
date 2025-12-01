@@ -1,16 +1,81 @@
-# React + Vite
+# CSE Fest 2025 - Event System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A complete React-based event system for the CSE Fest, featuring a hybrid physical/digital scavenger hunt and coding challenges.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+-   **Team Dashboard**: Real-time progress tracking for 10 teams.
+-   **Phase Orchestration**: Enforces a strict phase order (Phase 3 is always Role Swap).
+-   **Offline-First**: Uses `localStorage` for state persistence (No backend required).
+-   **Judge0 Integration**: Real-time C++ code execution for debugging and coding phases.
+-   **Cyberpunk UI**: Fully responsive, dark-mode aesthetic with neon animations.
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+-   **Frontend**: React, Vite, Tailwind CSS v4
+-   **State**: React Context + LocalStorage
+-   **Editor**: Monaco Editor (`@monaco-editor/react`)
+-   **Execution**: Judge0 (Self-Hosted via Docker)
+-   **Icons**: Lucide React
 
-## Expanding the ESLint configuration
+## 🏁 Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+
+-   Node.js (v18+)
+-   Docker & Docker Compose (for Judge0)
+
+### 1. Start Judge0 (Code Execution Engine)
+
+This project uses a local instance of Judge0 to execute code without rate limits.
+
+```bash
+cd judge0
+docker-compose up -d
+```
+*Wait a few minutes for the images to pull and services to start.*
+
+### 2. Start the Application
+
+```bash
+# Install dependencies
+npm install
+
+# Start the dev server
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+## 🎮 Game Flow
+
+1.  **Home**: Select your Team ID (1-10).
+2.  **Dashboard**: View your current phase.
+3.  **Phase 1 (QR Hunt)**: Find physical QR codes and enter the hidden strings.
+4.  **Phase 2 (Prediction)**: Predict the output of C++ code snippets.
+5.  **Phase 3 (Role Swap)**: Mandatory physical location swap between Indoor/Outdoor sub-teams.
+6.  **Phase 4 (Debugging)**: Fix buggy C++ code using the in-browser editor.
+7.  **Final Phase**: Solve 3 coding subtasks to unlock hints.
+8.  **Final Merge**: Combine hints with the outdoor clue to reveal the victory phrase.
+
+## 📂 Project Structure
+
+```
+src/
+├── components/   # Reusable UI (Layout, PhaseGuard)
+├── contexts/     # GameContext (State & Logic)
+├── data/         # JSON Configuration (Questions, Team Orders)
+├── pages/        # Individual Phase Pages
+├── utils/        # Helpers (Judge0 API, Storage)
+└── App.jsx       # Routing
+```
+
+## 🧩 Configuration
+
+-   **Team Orders**: `src/data/teamPhaseOrder.json`
+-   **Questions**: `src/data/*.json`
+-   **Judge0 Settings**: `src/utils/judge0.js`
+
+## 🏆 Victory Condition
+
+The final passphrase is: **"RISE TO GLORY FOREVER"**

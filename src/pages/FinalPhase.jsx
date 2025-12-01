@@ -55,7 +55,7 @@ const FinalPhase = () => {
             }
         } else {
             setStatus('ERROR');
-            setOutput(`Wrong Answer.\nExpected: ${task.expectedOutput}\nGot: ${actualOutput}`);
+            setOutput(`Wrong Answer.\n\nInput: ${task.testInput}\nExpected: ${task.expectedOutput}\nGot: ${actualOutput}`);
         }
     };
 
@@ -69,8 +69,8 @@ const FinalPhase = () => {
                             key={idx}
                             onClick={() => setActiveTask(idx)}
                             className={`px-4 py-2 rounded font-bold transition-all ${activeTask === idx ? 'bg-primary text-black' :
-                                    solvedParts[idx] ? 'bg-success/20 text-success border border-success' :
-                                        'bg-white/5 text-gray-400 hover:bg-white/10'
+                                solvedParts[idx] ? 'bg-success/20 text-success border border-success' :
+                                    'bg-white/5 text-gray-400 hover:bg-white/10'
                                 }`}
                         >
                             TASK {idx + 1} {solvedParts[idx] && '✓'}
@@ -111,8 +111,8 @@ const FinalPhase = () => {
                                 onClick={handleRun}
                                 disabled={status === 'RUNNING' || solvedParts[activeTask]}
                                 className={`flex items-center gap-2 px-4 py-1 rounded text-sm font-bold transition-colors ${solvedParts[activeTask] ? 'bg-success text-black cursor-default' :
-                                        status === 'RUNNING' ? 'bg-gray-600 cursor-not-allowed' :
-                                            'bg-primary text-black hover:bg-white'
+                                    status === 'RUNNING' ? 'bg-gray-600 cursor-not-allowed' :
+                                        'bg-primary text-black hover:bg-white'
                                     }`}
                             >
                                 {status === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}

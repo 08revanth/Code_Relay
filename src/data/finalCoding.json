@@ -1,7 +1,7 @@
 [
     {
         "id": 1,
-        "description": "Sum unique numbers. Input: Space separated integers.",
+        "description": "Sum of numbers that appear exactly once. Input: Space separated integers.",
         "testInput": "1 2 2 3 3 4",
         "expectedOutput": "5",
         "hint": "RISE"
