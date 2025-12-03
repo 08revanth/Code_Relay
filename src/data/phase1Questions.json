@@ -27,7 +27,7 @@
         "id": 4,
         "module": "INTERNAL_FUEL (Aptitude)",
         "log": "[SYSTEM LOG 09:22:45]: LABORATORY GRID FAILURE. [KERNEL DUMP]: A rogue subsystem inside the Lab Architecture is draining power. This subsystem is adjacent to a 'Triangular Fuel Cell' vendor. The specific coordinates point to the 'Dormancy Zone' for mobile machines nested within the lab structure.",
-        "task": "Search the internal parking zone to retrieve Fragment 04.",
+        "task": "Find the coordinates to retrieve Fragment 04.",
         "hint": "Near the smell of fried snacks and sleeping engines.",
         "answer": "Gam+ma"
     },

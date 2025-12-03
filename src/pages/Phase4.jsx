@@ -11,27 +11,48 @@ const Phase4 = () => {
     const { gameState, updatePhaseProgress, completePhase, teamId } = useGame();
     const navigate = useNavigate();
 
-    // State management
-    const currentQIndex = gameState.phaseProgress[4].currentQuestion || 0;
+    const phaseData = gameState.phaseProgress[4];
+    const currentQIndex = phaseData?.currentQuestion || 0;
     const currentQuestion = phase4Questions[currentQIndex];
 
     const [userCode, setUserCode] = useState('');
-    const [status, setStatus] = useState('IDLE'); // IDLE, RUNNING, SUCCESS, ERROR
+    const [status, setStatus] = useState('IDLE');
     const [finalString, setFinalString] = useState('');
     const [stringError, setStringError] = useState(false);
     const [codeFixed, setCodeFixed] = useState(false);
 
-    // Initialize editors when question changes
+    // Initialize from Storage or Default
     useEffect(() => {
         if (currentQuestion) {
-            // Pre-fill the user editor with the buggy code so they can fix it
-            setUserCode(currentQuestion.buggyCode);
-            setStatus('IDLE');
-            setCodeFixed(false);
-            setFinalString('');
-            setStringError(false);
+            // Restore Code
+            if (phaseData.draftCode) {
+                setUserCode(phaseData.draftCode);
+            } else {
+                setUserCode(currentQuestion.buggyCode);
+            }
+            
+            // Restore Status
+            if (phaseData.codeFixed) {
+                setCodeFixed(true);
+                setStatus('SUCCESS');
+            } else {
+                setCodeFixed(false);
+                setStatus('IDLE');
+            }
+
+            // Restore String Input
+            if (phaseData.draftString) {
+                setFinalString(phaseData.draftString);
+            }
         }
     }, [currentQIndex]);
+
+    // Handle Code Change with Auto-Save
+    const handleCodeChange = (val) => {
+        setUserCode(val);
+        // We use a small timeout or direct update. Since it's local, direct is fine.
+        updatePhaseProgress(4, { draftCode: val });
+    };
 
     const handleVerifyCode = async () => {
         setStatus('RUNNING');
@@ -40,9 +61,16 @@ const Phase4 = () => {
         if (result.correct) {
             setStatus('SUCCESS');
             setCodeFixed(true);
+            updatePhaseProgress(4, { codeFixed: true });
         } else {
             setStatus('ERROR');
         }
+    };
+
+    const handleStringChange = (e) => {
+        const val = e.target.value;
+        setFinalString(val);
+        updatePhaseProgress(4, { draftString: val });
     };
 
     const handleStringSubmit = (e) => {
@@ -50,7 +78,13 @@ const Phase4 = () => {
         if (finalString.trim() === currentQuestion.finalString) {
             const nextIndex = currentQIndex + 1;
             if (nextIndex < phase4Questions.length) {
-                updatePhaseProgress(4, { currentQuestion: nextIndex });
+                // Reset for next question
+                updatePhaseProgress(4, { 
+                    currentQuestion: nextIndex,
+                    draftCode: '',
+                    draftString: '',
+                    codeFixed: false 
+                });
             } else {
                 completePhase(4);
                 navigate(`/team/${teamId}/dashboard`);
@@ -74,9 +108,8 @@ const Phase4 = () => {
 
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
                 
-                {/* COLUMN 1: Task Info & Final Input (Width: 3/12) */}
+                {/* COLUMN 1: Task Info */}
                 <div className="lg:col-span-3 flex flex-col gap-4 overflow-y-auto">
-                    {/* Task Description */}
                     <div className="glass-card p-5 border-l-4 border-l-yellow-500 relative">
                         <div className="absolute top-0 right-0 bg-yellow-500/20 px-2 py-0.5 text-[10px] font-bold text-yellow-500">
                             SYSTEM ERROR
@@ -87,7 +120,6 @@ const Phase4 = () => {
                         </p>
                     </div>
 
-                    {/* Hint Section (Hidden until fixed) */}
                     <AnimatePresence>
                         {codeFixed && (
                             <motion.div
@@ -108,7 +140,6 @@ const Phase4 = () => {
                         )}
                     </AnimatePresence>
 
-                    {/* Final String Input */}
                     <div className={`glass-card p-5 transition-all duration-500 ${!codeFixed ? 'opacity-50 grayscale' : ''}`}>
                         <form onSubmit={handleStringSubmit}>
                             <label className="block text-[10px] font-bold text-gray-500 mb-2">
@@ -118,7 +149,7 @@ const Phase4 = () => {
                                 <input
                                     type="text"
                                     value={finalString}
-                                    onChange={(e) => setFinalString(e.target.value)}
+                                    onChange={handleStringChange}
                                     disabled={!codeFixed}
                                     placeholder={codeFixed ? "Secret String..." : "LOCKED"}
                                     className={`w-full bg-black/50 border-2 rounded-lg p-3 pl-9 text-md font-mono focus:outline-none transition-all ${
@@ -140,32 +171,24 @@ const Phase4 = () => {
                     </div>
                 </div>
 
-                {/* COLUMN 2: Read-Only Buggy Code (Width: 4/12) */}
+                {/* COLUMN 2: Read-Only Code */}
                 <div className="lg:col-span-4 flex flex-col gap-2">
                     <div className="flex items-center gap-2 text-error font-bold text-xs uppercase tracking-wider pl-1">
                         <FileCode size={14} /> Corrupted Source (Read Only)
                     </div>
                     <div className="flex-1 glass-card overflow-hidden border border-error/30 relative">
-                        {/* Overlay to prevent interaction */}
                         <div className="absolute inset-0 z-10 bg-error/5 pointer-events-none"></div>
                         <Editor
                             height="100%"
                             defaultLanguage={currentQuestion.language}
                             value={currentQuestion.buggyCode}
                             theme="vs-dark"
-                            options={{
-                                readOnly: true,
-                                minimap: { enabled: false },
-                                fontSize: 12,
-                                lineNumbers: 'on',
-                                scrollBeyondLastLine: false,
-                                domReadOnly: true
-                            }}
+                            options={{ readOnly: true, minimap: { enabled: false }, fontSize: 12, lineNumbers: 'on' }}
                         />
                     </div>
                 </div>
 
-                {/* COLUMN 3: Editable Workspace (Width: 5/12) */}
+                {/* COLUMN 3: Editable Workspace */}
                 <div className="lg:col-span-5 flex flex-col gap-2">
                      <div className="flex justify-between items-end pl-1">
                         <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
@@ -191,31 +214,16 @@ const Phase4 = () => {
                         <Editor
                             height="100%"
                             defaultLanguage={currentQuestion.language}
-                            language={currentQuestion.language}
                             value={userCode}
-                            onChange={(val) => setUserCode(val)}
+                            onChange={handleCodeChange}
                             theme="vs-dark"
-                            options={{
-                                minimap: { enabled: false },
-                                fontSize: 13,
-                                scrollBeyondLastLine: false,
-                                automaticLayout: true,
-                            }}
+                            options={{ minimap: { enabled: false }, fontSize: 13, automaticLayout: true }}
                         />
                     </div>
                     
-                    {/* Status Bar */}
                     <div className="h-8 flex items-center justify-end px-2">
-                        {status === 'ERROR' && (
-                            <span className="text-error text-xs font-mono animate-pulse">
-                                [ERROR] SYNTAX INVALID. REVIEW CODE.
-                            </span>
-                        )}
-                        {status === 'SUCCESS' && (
-                            <span className="text-success text-xs font-mono">
-                                [SUCCESS] COMPILED SUCCESSFULLY.
-                            </span>
-                        )}
+                        {status === 'ERROR' && <span className="text-error text-xs font-mono animate-pulse">[ERROR] SYNTAX INVALID. REVIEW CODE.</span>}
+                        {status === 'SUCCESS' && <span className="text-success text-xs font-mono">[SUCCESS] COMPILED SUCCESSFULLY.</span>}
                     </div>
                 </div>
 

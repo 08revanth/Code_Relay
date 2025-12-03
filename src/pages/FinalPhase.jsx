@@ -8,45 +8,64 @@ import { Play, Loader2, Cpu, CheckCircle, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const FinalPhase = () => {
-    const { teamId, completePhase } = useGame();
+    const { gameState, updatePhaseProgress, teamId } = useGame();
     const navigate = useNavigate();
     
     const taskData = finalCodingData[0];
-    const [language, setLanguage] = useState('c');
+    const phaseData = gameState.phaseProgress[5]; // Phase 5 data
+
+    const [language, setLanguage] = useState(phaseData?.language || 'c');
     const [code, setCode] = useState(taskData.boilerplateC);
-    const [status, setStatus] = useState('IDLE'); // IDLE, CHECKING, SUCCESS, FAIL
+    const [status, setStatus] = useState('IDLE'); 
     const [feedback, setFeedback] = useState('');
 
-    // Switch Boilerplate when language changes
+    // Load saved code on mount
     useEffect(() => {
-        if (language === 'c') setCode(taskData.boilerplateC);
-        if (language === 'python') setCode(taskData.boilerplatePython);
-    }, [language]);
+        if (phaseData?.draftCode) {
+            setCode(phaseData.draftCode);
+        } else {
+            // If no draft, load boilerplate
+            setCode(language === 'c' ? taskData.boilerplateC : taskData.boilerplatePython);
+        }
+    }, []);
+
+    // Handle Language Switch (Only updates if user manually switches)
+    const handleLanguageChange = (e) => {
+        const newLang = e.target.value;
+        setLanguage(newLang);
+        // Reset code to boilerplate of new language OR empty
+        const newCode = newLang === 'c' ? taskData.boilerplateC : taskData.boilerplatePython;
+        setCode(newCode);
+        updatePhaseProgress(5, { language: newLang, draftCode: newCode });
+    };
+
+    // Auto-Save Code
+    const handleCodeChange = (val) => {
+        setCode(val);
+        updatePhaseProgress(5, { draftCode: val });
+    };
 
     const handleSubmit = async () => {
         setStatus('CHECKING');
         setFeedback('AI Judge is analyzing your logic...');
 
-        // Select correct solution to compare against
         const solutionCode = language === 'c' ? taskData.solutionC : taskData.solutionPython;
-
         const result = await compareCodeWithSolution(code, solutionCode, language);
 
         if (result.correct) {
             setStatus('SUCCESS');
-            setFeedback('SYSTEM OVERRIDE SUCCESSFUL. KEY GENERATED.');
+            setFeedback('SYSTEM OVERRIDE SUCCESSFUL. KEY: pelmt');
             setTimeout(() => {
                 navigate('/final-merge');
             }, 3000);
         } else {
             setStatus('FAIL');
-            setFeedback(result.message || "Logic verification failed. Check your algorithms.");
+            setFeedback(result.message || "Logic verification failed. Do not hardcode the answer.");
         }
     };
 
     return (
         <div className="h-[calc(100vh-100px)] flex flex-col p-4 max-w-[1800px] mx-auto">
-            {/* Header */}
             <div className="flex justify-between items-center mb-4 border-b border-primary/30 pb-4">
                 <div className="flex items-center gap-3">
                     <div className="bg-primary/20 p-2 rounded border border-primary/50">
@@ -63,7 +82,7 @@ const FinalPhase = () => {
                 <div className="flex items-center gap-4">
                     <select
                         value={language}
-                        onChange={(e) => setLanguage(e.target.value)}
+                        onChange={handleLanguageChange}
                         className="bg-black/50 border border-white/20 text-white p-2 rounded font-mono text-sm focus:border-primary outline-none"
                     >
                         <option value="c">C Language</option>
@@ -86,7 +105,6 @@ const FinalPhase = () => {
             </div>
 
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
-                {/* Left: Instructions */}
                 <div className="glass-card p-6 overflow-y-auto custom-scrollbar">
                     <h3 className="text-xl font-bold text-white mb-4 border-b border-white/10 pb-2">
                         DIRECTIVES
@@ -106,9 +124,8 @@ const FinalPhase = () => {
                             <ul className="list-decimal pl-4 space-y-2 text-gray-300">
                                 <li><span className="text-secondary font-bold">Filter:</span> Remove IDs that are Prime Numbers.</li>
                                 <li><span className="text-secondary font-bold">Sanitize:</span> Remove any symbol that is not a letter or number from strings.</li>
-                                <li><span className="text-secondary font-bold">Sort:</span> Order by String Length (Descending). If equal, order by ID (Ascending).</li>
+                                <li><span className="text-secondary font-bold">Sort:</span> Order by Length (High to Low), then by ID (Low to High).</li>
                                 <li><span className="text-secondary font-bold">Forge:</span> Extract the middle character of each string.</li>
-                                <li><span className="text-secondary font-bold">Encrypt:</span> Shift each extracted character by +1 (a→b, z→a).</li>
                             </ul>
                         </div>
                     </div>
@@ -142,7 +159,6 @@ const FinalPhase = () => {
                     )}
                 </div>
 
-                {/* Right: Editor */}
                 <div className="lg:col-span-2 glass-card overflow-hidden flex flex-col border-primary/30">
                     <div className="bg-white/5 p-2 px-4 flex justify-between items-center text-xs font-mono text-gray-500 border-b border-white/5">
                         <span>{language === 'c' ? 'main.c' : 'script.py'}</span>
@@ -153,7 +169,7 @@ const FinalPhase = () => {
                         defaultLanguage={language}
                         language={language}
                         value={code}
-                        onChange={(val) => setCode(val)}
+                        onChange={handleCodeChange}
                         theme="vs-dark"
                         options={{
                             minimap: { enabled: false },

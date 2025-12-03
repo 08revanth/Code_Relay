@@ -1,13 +1,17 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
 
 const PhaseGuard = ({ children, requiredPhaseId }) => {
-    const { teamId, getCurrentPhaseId, gameState } = useGame();
+    const { teamId, getCurrentPhaseId, loading } = useGame();
     const navigate = useNavigate();
-    const location = useLocation();
+    const [isChecked, setIsChecked] = useState(false);
 
     useEffect(() => {
+        // 1. Wait for loading to finish (Data restoration)
+        if (loading) return;
+
+        // 2. If no team ID found after loading, redirect to home
         if (!teamId) {
             navigate('/');
             return;
@@ -15,25 +19,29 @@ const PhaseGuard = ({ children, requiredPhaseId }) => {
 
         const currentPhase = getCurrentPhaseId();
 
-        // Special case for Final Merge which is accessible after Final Phase (Phase 5/6 merged)
+        // 3. Logic for Final Merge
         if (requiredPhaseId === 'FINAL_MERGE') {
-            if (currentPhase !== 'COMPLETED' && currentPhase !== 5) { // Assuming 5 is final
-                // Logic for final merge access can be refined. 
-                // For now, let's say if they are NOT in the final phase or completed, kick them out.
-                // Actually, Final Merge is likely the very end.
+            if (currentPhase !== 'COMPLETED' && currentPhase !== 5) {
+               // Optional: Redirect if they aren't ready, but for now we allow access if logged in
             }
-            return;
-        }
-
-        // Strict Phase Checking
-        // If the user tries to access /phase1 but their current phase is 2, redirect to dashboard.
-        if (currentPhase !== requiredPhaseId && requiredPhaseId !== 'ANY') {
-            // Allow viewing past phases? The prompt implies strict "Next Phase" flow.
-            // Let's redirect to dashboard if they are not on the correct phase.
+        } 
+        // 4. Strict Phase Checking
+        else if (currentPhase !== requiredPhaseId && requiredPhaseId !== 'ANY') {
             navigate(`/team/${teamId}/dashboard`);
         }
 
-    }, [teamId, navigate, requiredPhaseId, getCurrentPhaseId]);
+        setIsChecked(true);
+
+    }, [teamId, navigate, requiredPhaseId, getCurrentPhaseId, loading]);
+
+    // Show nothing (or a loader) while checking state
+    if (loading || !isChecked) {
+        return (
+            <div className="flex h-[50vh] items-center justify-center text-primary font-mono animate-pulse">
+                INITIALIZING SECURITY PROTOCOLS...
+            </div>
+        );
+    }
 
     if (!teamId) return null;
 

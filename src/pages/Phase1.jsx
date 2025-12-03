@@ -14,54 +14,51 @@ const Phase1 = () => {
     const [timeLeft, setTimeLeft] = useState(HINT_DELAY_SECONDS);
     const navigate = useNavigate();
 
-    // 1. Initialize Order and Timer if missing
+    // 1. Initialize Order, Timer, and DRAFT ANSWER
     useEffect(() => {
         const phaseData = gameState.phaseProgress[1];
         
-        // If no random order exists, create one (Persistent Randomization)
+        // Randomization Logic
         if (!phaseData.order) {
             const indices = Array.from({ length: phase1Questions.length }, (_, i) => i);
-            // Fisher-Yates Shuffle
             for (let i = indices.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [indices[i], indices[j]] = [indices[j], indices[i]];
             }
-            
             updatePhaseProgress(1, { 
                 order: indices,
-                startTime: Date.now() // Start timer for first question
+                startTime: Date.now() 
             });
             return;
         }
 
-        // If order exists but startTime is null (edge case fix), set it
+        // Restore Saved Answer
+        if (phaseData.draftAnswer) {
+            setAnswer(phaseData.draftAnswer);
+        }
+
         if (!phaseData.startTime) {
             updatePhaseProgress(1, { startTime: Date.now() });
         }
     }, []);
 
-    // 2. Loading State while initializing
     const phaseData = gameState.phaseProgress[1];
     if (!phaseData || !phaseData.order || !phaseData.startTime) {
         return <div className="text-center mt-20 text-primary animate-pulse">INITIALIZING SECURE LINK...</div>;
     }
 
-    // 3. Determine Current Question based on Randomized Order
     const currentStep = phaseData.currentQuestion || 0;
     const actualQuestionIndex = phaseData.order[currentStep];
     const currentQuestion = phase1Questions[actualQuestionIndex];
 
-    // 4. Timer Logic
+    // Timer Logic
     useEffect(() => {
         const interval = setInterval(() => {
             const now = Date.now();
-            // Calculate time based on saved start time (Robust against reload)
             const elapsed = Math.floor((now - phaseData.startTime) / 1000);
             const remaining = Math.max(0, HINT_DELAY_SECONDS - elapsed);
-            
             setTimeLeft(remaining);
         }, 1000);
-
         return () => clearInterval(interval);
     }, [phaseData.startTime, currentStep]);
 
@@ -71,23 +68,29 @@ const Phase1 = () => {
         return `${m}:${s.toString().padStart(2, '0')}`;
     };
 
-    // 5. Submit Handler
+    // SAVE INPUT ON CHANGE
+    const handleInputChange = (e) => {
+        const val = e.target.value;
+        setAnswer(val);
+        // Save to local storage
+        updatePhaseProgress(1, { draftAnswer: val });
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        // Normalize answer check (trim whitespace)
         if (answer.trim() === currentQuestion.answer) {
             const nextStep = currentStep + 1;
             
             if (nextStep < phase1Questions.length) {
-                // Move to next question AND RESET TIMER (update startTime)
                 updatePhaseProgress(1, { 
                     currentQuestion: nextStep,
-                    startTime: Date.now() 
+                    startTime: Date.now(),
+                    draftAnswer: '' // Clear draft for next question
                 });
                 setAnswer('');
                 setError(false);
-                setTimeLeft(HINT_DELAY_SECONDS); // Visual reset
+                setTimeLeft(HINT_DELAY_SECONDS);
             } else {
                 completePhase(1);
                 navigate(`/team/${teamId}/dashboard`);
@@ -110,8 +113,6 @@ const Phase1 = () => {
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* Left Column: System Log (Question) */}
                 <div className="lg:col-span-2 space-y-6">
                     <motion.div 
                         initial={{ opacity: 0, x: -20 }}
@@ -137,7 +138,7 @@ const Phase1 = () => {
                         <input
                             type="text"
                             value={answer}
-                            onChange={(e) => setAnswer(e.target.value)}
+                            onChange={handleInputChange}
                             placeholder="INPUT FRAGMENT KEY"
                             className={`w-full bg-black/50 border-2 rounded-lg p-5 text-center text-xl font-mono tracking-widest focus:outline-none transition-all ${
                                 error 
@@ -155,9 +156,7 @@ const Phase1 = () => {
                     </form>
                 </div>
 
-                {/* Right Column: Timer & Hint */}
                 <div className="space-y-6">
-                    {/* Timer Card */}
                     <div className="glass-card p-6 text-center">
                         <div className="flex justify-center items-center gap-2 text-gray-400 mb-2">
                             <Clock size={18} /> TIME UNTIL DECRYPTION
@@ -167,7 +166,6 @@ const Phase1 = () => {
                         </div>
                     </div>
 
-                    {/* Hint Card */}
                     <div className={`glass-card p-6 border transition-all duration-500 ${timeLeft === 0 ? 'border-secondary/50 bg-secondary/5' : 'border-white/5 grayscale opacity-70'}`}>
                         <div className="flex items-center gap-2 font-bold mb-4">
                             {timeLeft === 0 ? <Unlock className="text-secondary"/> : <Lock size={18}/>}
@@ -190,11 +188,6 @@ const Phase1 = () => {
                                 AWAITING TIMER EXPIRATION...
                             </div>
                         )}
-                    </div>
-
-                    <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-200 flex gap-2 items-start">
-                        <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                        WARNING: Reloading does not reset the encryption timer. The system is persistent.
                     </div>
                 </div>
             </div>

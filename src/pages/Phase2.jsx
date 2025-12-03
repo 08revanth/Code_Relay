@@ -10,20 +10,29 @@ const Phase2 = () => {
     const [answer, setAnswer] = useState('');
     const [error, setError] = useState(false);
     
-    // Step 1 = Predict Output, Step 2 = Enter Location String
-    const [step, setStep] = useState(1); 
+    // Initialize step from storage or default to 1
+    const phaseData = gameState.phaseProgress[2];
+    const [step, setStep] = useState(phaseData?.step || 1); 
     
     const navigate = useNavigate();
-
-    const currentQIndex = gameState.phaseProgress[2].currentQuestion || 0;
+    const currentQIndex = phaseData?.currentQuestion || 0;
     const currentQuestion = phase2Questions[currentQIndex];
 
-    // Reset step when question changes
+    // Load saved draft on mount
     useEffect(() => {
-        setStep(1);
-        setAnswer('');
-        setError(false);
-    }, [currentQIndex]);
+        if (phaseData?.draftAnswer) {
+            setAnswer(phaseData.draftAnswer);
+        }
+        if (phaseData?.step) {
+            setStep(phaseData.step);
+        }
+    }, []);
+
+    const handleInputChange = (e) => {
+        const val = e.target.value;
+        setAnswer(val);
+        updatePhaseProgress(2, { draftAnswer: val });
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -33,6 +42,8 @@ const Phase2 = () => {
             if (answer.trim() === currentQuestion.outputAnswer) {
                 setStep(2);
                 setAnswer('');
+                // Save Step 2 state
+                updatePhaseProgress(2, { step: 2, draftAnswer: '' });
                 setError(false);
             } else {
                 setError(true);
@@ -43,7 +54,13 @@ const Phase2 = () => {
             if (answer.trim() === currentQuestion.finalAnswer) {
                 const nextIndex = currentQIndex + 1;
                 if (nextIndex < phase2Questions.length) {
-                    updatePhaseProgress(2, { currentQuestion: nextIndex });
+                    updatePhaseProgress(2, { 
+                        currentQuestion: nextIndex,
+                        step: 1,       // Reset to Step 1 for next question
+                        draftAnswer: '' 
+                    });
+                    setStep(1);
+                    setAnswer('');
                 } else {
                     completePhase(2);
                     navigate(`/team/${teamId}/dashboard`);
@@ -108,14 +125,12 @@ const Phase2 = () => {
                 {/* Right Column: Interaction */}
                 <div className="flex flex-col justify-center space-y-6">
                     
-                    {/* Step 1 Indicator */}
                     <div className={`transition-all duration-300 ${step === 1 ? 'opacity-100' : 'opacity-50 grayscale'}`}>
                         <div className="flex items-center gap-2 text-sm font-bold text-gray-400 mb-2">
                             <Terminal size={16} /> STEP 1: PREDICT OUTPUT
                         </div>
                     </div>
 
-                    {/* Step 2 Indicator (Hint) */}
                     <AnimatePresence>
                         {step === 2 && (
                             <motion.div 
@@ -133,12 +148,11 @@ const Phase2 = () => {
                         )}
                     </AnimatePresence>
 
-                    {/* Input Form */}
                     <form onSubmit={handleSubmit} className="relative mt-4">
                         <input
                             type="text"
                             value={answer}
-                            onChange={(e) => setAnswer(e.target.value)}
+                            onChange={handleInputChange}
                             placeholder={step === 1 ? "ENTER CODE OUTPUT" : "ENTER FOUND STRING"}
                             className={`w-full bg-black/50 border-2 rounded-lg p-5 pl-12 text-xl font-mono focus:outline-none transition-all ${
                                 error 
