@@ -1,175 +1,224 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
 import phase4Questions from '../data/phase4DebugQuestions.json';
 import Editor from '@monaco-editor/react';
-import { runCode } from '../utils/judge0';
-import { Play, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { validateDebugCode } from '../utils/judge0';
+import { Play, Loader2, Bug, CheckCircle, Lock, Unlock, ArrowRight, FileCode, Edit3 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Phase4 = () => {
     const { gameState, updatePhaseProgress, completePhase, teamId } = useGame();
-    const [code, setCode] = useState('');
-    const [output, setOutput] = useState('');
-    const [status, setStatus] = useState('IDLE'); // IDLE, RUNNING, SUCCESS, ERROR
     const navigate = useNavigate();
 
+    // State management
     const currentQIndex = gameState.phaseProgress[4].currentQuestion || 0;
     const currentQuestion = phase4Questions[currentQIndex];
 
-    const [elapsedTime, setElapsedTime] = useState(0);
-    const [language, setLanguage] = useState('c');
+    const [userCode, setUserCode] = useState('');
+    const [status, setStatus] = useState('IDLE'); // IDLE, RUNNING, SUCCESS, ERROR
+    const [finalString, setFinalString] = useState('');
+    const [stringError, setStringError] = useState(false);
+    const [codeFixed, setCodeFixed] = useState(false);
 
-    // Initialize code only when question changes or language changes
-    React.useEffect(() => {
+    // Initialize editors when question changes
+    useEffect(() => {
         if (currentQuestion) {
-            if (language === 'python') {
-                setCode(currentQuestion.buggyCodePython || "# No Python version available");
-            } else if (language === 'c') {
-                setCode(currentQuestion.buggyCodeC || "// No C version available");
-            } else {
-                setCode(currentQuestion.buggyCode);
-            }
-            setOutput('');
+            // Pre-fill the user editor with the buggy code so they can fix it
+            setUserCode(currentQuestion.buggyCode);
             setStatus('IDLE');
-            setElapsedTime(0);
+            setCodeFixed(false);
+            setFinalString('');
+            setStringError(false);
         }
-    }, [currentQuestion, language]);
+    }, [currentQIndex]);
 
-    // Timer effect
-    React.useEffect(() => {
-        let interval;
-        if (status !== 'SUCCESS') {
-            interval = setInterval(() => {
-                setElapsedTime(prev => prev + 1);
-            }, 1000);
-        }
-        return () => clearInterval(interval);
-    }, [status, currentQuestion]);
-
-    const handleRun = async () => {
+    const handleVerifyCode = async () => {
         setStatus('RUNNING');
-        setOutput('Compiling & Executing...');
+        const result = await validateDebugCode(userCode, currentQuestion.language);
 
-        let langId = 54; // C++
-        if (language === 'python') langId = 71;
-        if (language === 'c') langId = 50;
-
-        const result = await runCode(code, langId);
-
-        if (result.error) {
-            setOutput(`System Error: ${result.error}`);
-            setStatus('ERROR');
-            return;
-        }
-
-        if (result.compile_output) {
-            setOutput(`Compile Error:\n${result.compile_output}`);
-            setStatus('ERROR');
-            return;
-        }
-
-        if (result.stderr) {
-            setOutput(`Runtime Error:\n${result.stderr}`);
-            setStatus('ERROR');
-            return;
-        }
-
-        const actualOutput = (result.stdout || "").trim();
-        setOutput(actualOutput);
-
-        if (actualOutput === currentQuestion.expectedOutput) {
+        if (result.correct) {
             setStatus('SUCCESS');
-            setTimeout(() => {
-                const nextIndex = currentQIndex + 1;
-                if (nextIndex < phase4Questions.length) {
-                    updatePhaseProgress(4, { currentQuestion: nextIndex });
-                } else {
-                    completePhase(4);
-                    navigate(`/team/${teamId}/dashboard`);
-                }
-            }, 1500);
+            setCodeFixed(true);
         } else {
             setStatus('ERROR');
-            setOutput((prev) => `${prev}\n\n[INCORRECT OUTPUT] Expected: ${currentQuestion.expectedOutput}`);
+        }
+    };
+
+    const handleStringSubmit = (e) => {
+        e.preventDefault();
+        if (finalString.trim() === currentQuestion.finalString) {
+            const nextIndex = currentQIndex + 1;
+            if (nextIndex < phase4Questions.length) {
+                updatePhaseProgress(4, { currentQuestion: nextIndex });
+            } else {
+                completePhase(4);
+                navigate(`/team/${teamId}/dashboard`);
+            }
+        } else {
+            setStringError(true);
+            setTimeout(() => setStringError(false), 1000);
         }
     };
 
     return (
-        <div className="h-[calc(100vh-100px)] flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-primary">PHASE 4: DEBUGGING RUSH</h2>
-                <div className="text-sm text-gray-400">BUG {currentQIndex + 1} / {phase4Questions.length}</div>
+        <div className="h-[calc(100vh-100px)] flex flex-col p-4 max-w-[1600px] mx-auto">
+            <div className="flex justify-between items-center mb-4 border-b border-primary/30 pb-2">
+                <h2 className="text-2xl font-bold text-primary neon-text flex items-center gap-2">
+                    <Bug /> PHASE 4: DEBUGGING PROTOCOL
+                </h2>
+                <div className="text-sm text-gray-400 font-mono">
+                    LOG {currentQIndex + 1} / {phase4Questions.length}
+                </div>
             </div>
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
-                {/* Editor */}
-                <div className="glass-card overflow-hidden flex flex-col">
-                    <div className="bg-white/5 p-2 flex justify-between items-center border-b border-white/10">
-                        <div className="flex items-center gap-4">
-                            <select
-                                className="bg-white/10 text-white text-xs p-1 rounded border border-white/20 outline-none cursor-pointer hover:bg-white/20"
-                                value={language}
-                                onChange={(e) => setLanguage(e.target.value)}
-                            >
-                                <option value="c" className="bg-gray-900">C</option>
-                                <option value="cpp" className="bg-gray-900">C++</option>
-                                <option value="python" className="bg-gray-900">Python</option>
-                            </select>
-                            <span className="text-xs font-mono text-gray-400">
-                                {language === 'python' ? 'main.py' : language === 'c' ? 'main.c' : 'main.cpp'}
-                            </span>
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
+                
+                {/* COLUMN 1: Task Info & Final Input (Width: 3/12) */}
+                <div className="lg:col-span-3 flex flex-col gap-4 overflow-y-auto">
+                    {/* Task Description */}
+                    <div className="glass-card p-5 border-l-4 border-l-yellow-500 relative">
+                        <div className="absolute top-0 right-0 bg-yellow-500/20 px-2 py-0.5 text-[10px] font-bold text-yellow-500">
+                            SYSTEM ERROR
                         </div>
+                        <h3 className="text-md font-bold text-white mb-2">{currentQuestion.module}</h3>
+                        <p className="text-xs text-gray-300 font-mono leading-relaxed">
+                            {currentQuestion.log}
+                        </p>
+                    </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="text-mono text-primary font-bold">
-                                ⏱️ {Math.floor(elapsedTime / 60)}:{String(elapsedTime % 60).padStart(2, '0')}
-                            </div>
-                            <button
-                                onClick={handleRun}
-                                disabled={status === 'RUNNING' || status === 'SUCCESS'}
-                                className={`flex items-center gap-2 px-4 py-1 rounded text-sm font-bold transition-colors ${status === 'RUNNING' ? 'bg-gray-600 cursor-not-allowed' :
-                                    status === 'SUCCESS' ? 'bg-success text-black' :
-                                        'bg-primary text-black hover:bg-white'
+                    {/* Hint Section (Hidden until fixed) */}
+                    <AnimatePresence>
+                        {codeFixed && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="glass-card p-5 border-success shadow-[0_0_20px_rgba(10,255,10,0.2)]"
+                            >
+                                <div className="flex items-center gap-2 text-success font-bold mb-2 text-sm">
+                                    <Unlock size={16} /> SYSTEM RESTORED
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-gray-400 text-[10px] uppercase mb-1">LOCATION HINT</p>
+                                    <p className="text-lg text-white font-bold neon-text">
+                                        "{currentQuestion.hint}"
+                                    </p>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Final String Input */}
+                    <div className={`glass-card p-5 transition-all duration-500 ${!codeFixed ? 'opacity-50 grayscale' : ''}`}>
+                        <form onSubmit={handleStringSubmit}>
+                            <label className="block text-[10px] font-bold text-gray-500 mb-2">
+                                {codeFixed ? "ENTER RETRIEVED STRING" : "FIX CODE TO UNLOCK"}
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={finalString}
+                                    onChange={(e) => setFinalString(e.target.value)}
+                                    disabled={!codeFixed}
+                                    placeholder={codeFixed ? "Secret String..." : "LOCKED"}
+                                    className={`w-full bg-black/50 border-2 rounded-lg p-3 pl-9 text-md font-mono focus:outline-none transition-all ${
+                                        stringError 
+                                        ? 'border-error text-error' 
+                                        : 'border-white/20 text-white focus:border-primary'
                                     }`}
-                            >
-                                {status === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-                                {status === 'RUNNING' ? 'EXECUTING' : 'RUN CODE'}
-                            </button>
-                        </div>
+                                />
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                    {codeFixed ? <ArrowRight size={16} /> : <Lock size={16} />}
+                                </div>
+                            </div>
+                            {codeFixed && (
+                                <button type="submit" className="w-full mt-3 bg-white text-black font-bold py-2 rounded text-xs hover:bg-primary transition-colors">
+                                    VERIFY
+                                </button>
+                            )}
+                        </form>
                     </div>
-                    <Editor
-                        height="100%"
-                        defaultLanguage={language === 'python' ? 'python' : 'cpp'}
-                        value={code}
-                        onChange={(value) => setCode(value)}
-                        theme="vs-dark"
-                        options={{
-                            minimap: { enabled: false },
-                            fontSize: 14,
-                            scrollBeyondLastLine: false,
-                        }}
-                    />
                 </div>
 
-                {/* Output & Status */}
-                <div className="glass-card p-4 flex flex-col">
-                    <h3 className="text-sm font-bold text-gray-400 mb-2">CONSOLE OUTPUT</h3>
-                    <div className="flex-1 bg-black rounded p-4 font-mono text-sm whitespace-pre-wrap overflow-auto border border-white/10">
-                        {output || <span className="text-gray-600">// Output will appear here...</span>}
+                {/* COLUMN 2: Read-Only Buggy Code (Width: 4/12) */}
+                <div className="lg:col-span-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-error font-bold text-xs uppercase tracking-wider pl-1">
+                        <FileCode size={14} /> Corrupted Source (Read Only)
+                    </div>
+                    <div className="flex-1 glass-card overflow-hidden border border-error/30 relative">
+                        {/* Overlay to prevent interaction */}
+                        <div className="absolute inset-0 z-10 bg-error/5 pointer-events-none"></div>
+                        <Editor
+                            height="100%"
+                            defaultLanguage={currentQuestion.language}
+                            value={currentQuestion.buggyCode}
+                            theme="vs-dark"
+                            options={{
+                                readOnly: true,
+                                minimap: { enabled: false },
+                                fontSize: 12,
+                                lineNumbers: 'on',
+                                scrollBeyondLastLine: false,
+                                domReadOnly: true
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {/* COLUMN 3: Editable Workspace (Width: 5/12) */}
+                <div className="lg:col-span-5 flex flex-col gap-2">
+                     <div className="flex justify-between items-end pl-1">
+                        <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+                            <Edit3 size={14} /> Patch Workspace
+                        </div>
+                        <button
+                            onClick={handleVerifyCode}
+                            disabled={status === 'RUNNING' || codeFixed}
+                            className={`flex items-center gap-2 px-4 py-1 rounded text-xs font-bold transition-all ${
+                                codeFixed 
+                                ? 'bg-success text-black cursor-default'
+                                : status === 'RUNNING' 
+                                    ? 'bg-gray-700 cursor-wait'
+                                    : 'bg-primary text-black hover:bg-white'
+                            }`}
+                        >
+                            {status === 'RUNNING' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+                            {status === 'RUNNING' ? 'VALIDATING...' : codeFixed ? 'FIX VERIFIED' : 'RUN PATCH'}
+                        </button>
                     </div>
 
-                    {status === 'SUCCESS' && (
-                        <div className="mt-4 p-4 bg-success/20 border border-success rounded flex items-center gap-4 text-success font-bold animate-pulse">
-                            <CheckCircle /> BUG FIXED! MOVING TO NEXT...
-                        </div>
-                    )}
-
-                    {status === 'ERROR' && (
-                        <div className="mt-4 p-4 bg-error/20 border border-error rounded flex items-center gap-4 text-error font-bold">
-                            <AlertTriangle /> INCORRECT OR ERROR
-                        </div>
-                    )}
+                    <div className={`flex-1 glass-card overflow-hidden border transition-all duration-300 ${status === 'ERROR' ? 'border-error' : status === 'SUCCESS' ? 'border-success' : 'border-primary/50'}`}>
+                        <Editor
+                            height="100%"
+                            defaultLanguage={currentQuestion.language}
+                            language={currentQuestion.language}
+                            value={userCode}
+                            onChange={(val) => setUserCode(val)}
+                            theme="vs-dark"
+                            options={{
+                                minimap: { enabled: false },
+                                fontSize: 13,
+                                scrollBeyondLastLine: false,
+                                automaticLayout: true,
+                            }}
+                        />
+                    </div>
+                    
+                    {/* Status Bar */}
+                    <div className="h-8 flex items-center justify-end px-2">
+                        {status === 'ERROR' && (
+                            <span className="text-error text-xs font-mono animate-pulse">
+                                [ERROR] SYNTAX INVALID. REVIEW CODE.
+                            </span>
+                        )}
+                        {status === 'SUCCESS' && (
+                            <span className="text-success text-xs font-mono">
+                                [SUCCESS] COMPILED SUCCESSFULLY.
+                            </span>
+                        )}
+                    </div>
                 </div>
+
             </div>
         </div>
     );

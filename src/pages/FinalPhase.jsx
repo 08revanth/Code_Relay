@@ -1,185 +1,167 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
-import finalCoding from '../data/finalCoding.json';
+import finalCodingData from '../data/finalCoding.json';
 import Editor from '@monaco-editor/react';
-import { runCode } from '../utils/judge0';
-import { Play, Loader2, Lock, Unlock } from 'lucide-react';
+import { compareCodeWithSolution } from '../utils/judge0';
+import { Play, Loader2, Cpu, CheckCircle, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const FinalPhase = () => {
-    const { gameState, updatePhaseProgress, completePhase, teamId } = useGame();
-    const [activeTask, setActiveTask] = useState(0);
-    const [language, setLanguage] = useState('c');
-    const [code, setCode] = useState('// Write your solution here\n#include <stdio.h>\n\nint main() {\n    // Read input from stdin\n    // Print output to stdout\n    return 0;\n}');
-    const [output, setOutput] = useState('');
-    const [status, setStatus] = useState('IDLE');
-    const [elapsedTime, setElapsedTime] = useState(0);
+    const { teamId, completePhase } = useGame();
     const navigate = useNavigate();
+    
+    const taskData = finalCodingData[0];
+    const [language, setLanguage] = useState('c');
+    const [code, setCode] = useState(taskData.boilerplateC);
+    const [status, setStatus] = useState('IDLE'); // IDLE, CHECKING, SUCCESS, FAIL
+    const [feedback, setFeedback] = useState('');
 
-    // Timer effect
-    React.useEffect(() => {
-        let interval;
-        const isSolved = gameState.phaseProgress[5]?.solvedParts?.[activeTask];
+    // Switch Boilerplate when language changes
+    useEffect(() => {
+        if (language === 'c') setCode(taskData.boilerplateC);
+        if (language === 'python') setCode(taskData.boilerplatePython);
+    }, [language]);
 
-        if (!isSolved && status !== 'SUCCESS') {
-            interval = setInterval(() => {
-                setElapsedTime(prev => prev + 1);
-            }, 1000);
-        }
-        return () => clearInterval(interval);
-    }, [status, activeTask, gameState.phaseProgress]);
+    const handleSubmit = async () => {
+        setStatus('CHECKING');
+        setFeedback('AI Judge is analyzing your logic...');
 
-    // Reset timer when switching tasks (optional, or keep cumulative?)
-    // User said "calculate time they spend on EACH question".
-    // So we should probably reset or track per task. 
-    // For simplicity in this UI, I'll reset on task switch if not solved.
-    React.useEffect(() => {
-        setElapsedTime(0);
-        // Reset code template based on language
-        if (language === 'c') {
-            setCode('// Write your solution here\n#include <stdio.h>\n\nint main() {\n    // Read input from stdin\n    // Print output to stdout\n    return 0;\n}');
-        } else {
-            setCode('# Write your solution here\nimport sys\n\n# Read input from stdin\n# Print output to stdout');
-        }
-    }, [activeTask, language]);
+        // Select correct solution to compare against
+        const solutionCode = language === 'c' ? taskData.solutionC : taskData.solutionPython;
 
-    const solvedParts = gameState.phaseProgress[5]?.solvedParts || [false, false, false];
-    const hints = gameState.phaseProgress[5]?.hints || [];
+        const result = await compareCodeWithSolution(code, solutionCode, language);
 
-    const handleRun = async () => {
-        setStatus('RUNNING');
-        setOutput('Testing against hidden cases...');
-
-        const task = finalCoding[activeTask];
-        const result = await runCode(code, language === 'python' ? 71 : 50, task.testInput);
-
-        if (result.error || result.compile_output || result.stderr) {
-            setOutput(result.error || result.compile_output || result.stderr);
-            setStatus('ERROR');
-            return;
-        }
-
-        const actualOutput = (result.stdout || "").trim();
-        if (actualOutput === task.expectedOutput) {
+        if (result.correct) {
             setStatus('SUCCESS');
-            setOutput(`Test Passed!\nOutput: ${actualOutput}\n\nHINT UNLOCKED: ${task.hint}`);
-
-            // Update state
-            const newSolved = [...solvedParts];
-            newSolved[activeTask] = true;
-
-            const newHints = [...hints];
-            if (!newHints.includes(task.hint)) {
-                newHints.push(task.hint);
-            }
-
-            updatePhaseProgress(5, { solvedParts: newSolved, hints: newHints });
-
-            // Check if all solved
-            if (newSolved.every(s => s)) {
-                setTimeout(() => {
-                    completePhase(5);
-                    navigate('/final-merge');
-                }, 2000);
-            }
+            setFeedback('SYSTEM OVERRIDE SUCCESSFUL. KEY GENERATED.');
+            setTimeout(() => {
+                navigate('/final-merge');
+            }, 3000);
         } else {
-            setStatus('ERROR');
-            setOutput(`Wrong Answer.\n\nInput: ${task.testInput}\nExpected: ${task.expectedOutput}\nGot: ${actualOutput}`);
+            setStatus('FAIL');
+            setFeedback(result.message || "Logic verification failed. Check your algorithms.");
         }
     };
 
     return (
-        <div className="h-[calc(100vh-100px)] flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-primary">FINAL PHASE: CODING TRIALS</h2>
-                <div className="flex gap-2">
-                    {finalCoding.map((_, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => setActiveTask(idx)}
-                            className={`px-4 py-2 rounded font-bold transition-all ${activeTask === idx ? 'bg-primary text-black' :
-                                solvedParts[idx] ? 'bg-success/20 text-success border border-success' :
-                                    'bg-white/5 text-gray-400 hover:bg-white/10'
-                                }`}
-                        >
-                            TASK {idx + 1} {solvedParts[idx] && '✓'}
-                        </button>
-                    ))}
+        <div className="h-[calc(100vh-100px)] flex flex-col p-4 max-w-[1800px] mx-auto">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-4 border-b border-primary/30 pb-4">
+                <div className="flex items-center gap-3">
+                    <div className="bg-primary/20 p-2 rounded border border-primary/50">
+                        <Cpu className="text-primary animate-pulse" size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-black text-white tracking-tight">
+                            PHASE 5: <span className="text-primary neon-text">CORE OVERRIDE</span>
+                        </h2>
+                        <p className="text-xs text-gray-400 font-mono tracking-widest">FINAL CODING CHALLENGE</p>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                    <select
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="bg-black/50 border border-white/20 text-white p-2 rounded font-mono text-sm focus:border-primary outline-none"
+                    >
+                        <option value="c">C Language</option>
+                        <option value="python">Python 3</option>
+                    </select>
+
+                    <button
+                        onClick={handleSubmit}
+                        disabled={status === 'CHECKING' || status === 'SUCCESS'}
+                        className={`px-8 py-3 rounded font-black tracking-wider transition-all flex items-center gap-2 ${
+                            status === 'SUCCESS' ? 'bg-success text-black' :
+                            status === 'FAIL' ? 'bg-error text-white' :
+                            'bg-primary text-black hover:bg-white hover:scale-105 shadow-[0_0_20px_rgba(0,243,255,0.4)]'
+                        }`}
+                    >
+                        {status === 'CHECKING' ? <Loader2 className="animate-spin" /> : <Play fill="currentColor" />}
+                        {status === 'CHECKING' ? 'VERIFYING...' : status === 'SUCCESS' ? 'ACCESS GRANTED' : 'COMPILE & SUBMIT'}
+                    </button>
                 </div>
             </div>
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
-                {/* Task Description */}
-                <div className="glass-card p-6 overflow-auto">
-                    <h3 className="text-xl font-bold mb-4 text-white">TASK {activeTask + 1}</h3>
-                    <p className="text-gray-300 mb-6">{finalCoding[activeTask].description}</p>
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
+                {/* Left: Instructions */}
+                <div className="glass-card p-6 overflow-y-auto custom-scrollbar">
+                    <h3 className="text-xl font-bold text-white mb-4 border-b border-white/10 pb-2">
+                        DIRECTIVES
+                    </h3>
+                    <p className="text-gray-300 mb-6 leading-relaxed">
+                        {taskData.description}
+                    </p>
 
-                    <div className="bg-black/50 p-4 rounded mb-4">
-                        <div className="text-xs text-gray-500 mb-1">SAMPLE INPUT</div>
-                        <div className="font-mono">{finalCoding[activeTask].testInput}</div>
-                    </div>
+                    <div className="space-y-4 font-mono text-sm">
+                        <div className="bg-black/40 p-4 rounded border-l-2 border-primary">
+                            <span className="text-gray-500 block text-xs mb-1">INPUT DATA</span>
+                            <div className="text-white whitespace-pre-wrap">{taskData.inputDescription}</div>
+                        </div>
 
-                    <div className="mt-8">
-                        <h4 className="font-bold text-secondary mb-2 flex items-center gap-2">
-                            {solvedParts[activeTask] ? <Unlock size={18} /> : <Lock size={18} />}
-                            REWARD HINT
-                        </h4>
-                        <div className={`p-4 rounded text-center font-bold text-xl ${solvedParts[activeTask] ? 'bg-secondary/20 text-secondary border border-secondary' : 'bg-gray-800 text-gray-600'
-                            }`}>
-                            {solvedParts[activeTask] ? finalCoding[activeTask].hint : '???'}
+                        <div className="bg-black/40 p-4 rounded border-l-2 border-secondary">
+                            <span className="text-gray-500 block text-xs mb-1">ALGORITHM STEPS</span>
+                            <ul className="list-decimal pl-4 space-y-2 text-gray-300">
+                                <li><span className="text-secondary font-bold">Filter:</span> Remove IDs that are Prime Numbers.</li>
+                                <li><span className="text-secondary font-bold">Sanitize:</span> Remove any symbol that is not a letter or number from strings.</li>
+                                <li><span className="text-secondary font-bold">Sort:</span> Order by String Length (Descending). If equal, order by ID (Ascending).</li>
+                                <li><span className="text-secondary font-bold">Forge:</span> Extract the middle character of each string.</li>
+                                <li><span className="text-secondary font-bold">Encrypt:</span> Shift each extracted character by +1 (a→b, z→a).</li>
+                            </ul>
                         </div>
                     </div>
+
+                    {status === 'FAIL' && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-6 p-4 bg-error/10 border border-error/50 rounded flex gap-3 items-start"
+                        >
+                            <AlertTriangle className="text-error shrink-0" />
+                            <div>
+                                <h4 className="font-bold text-error">EXECUTION FAILED</h4>
+                                <p className="text-sm text-error/80">{feedback}</p>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {status === 'SUCCESS' && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-6 p-4 bg-success/10 border border-success/50 rounded flex gap-3 items-start"
+                        >
+                            <CheckCircle className="text-success shrink-0" />
+                            <div>
+                                <h4 className="font-bold text-success">SYSTEM UNLOCKED</h4>
+                                <p className="text-sm text-success/80">{feedback}</p>
+                            </div>
+                        </motion.div>
+                    )}
                 </div>
 
-                {/* Editor & Output (Spans 2 cols) */}
-                <div className="lg:col-span-2 flex flex-col gap-4">
-                    <div className="glass-card flex-1 overflow-hidden flex flex-col">
-                        <div className="bg-white/5 p-2 flex justify-between items-center border-b border-white/10">
-                            <div className="flex items-center gap-4">
-                                <select
-                                    className="bg-white/10 text-white text-xs p-1 rounded border border-white/20 cursor-pointer hover:bg-white/20 outline-none"
-                                    value={language}
-                                    onChange={(e) => setLanguage(e.target.value)}
-                                    disabled={solvedParts[activeTask]}
-                                >
-                                    <option value="c" className="bg-gray-900">C</option>
-                                    <option value="python" className="bg-gray-900">Python</option>
-                                </select>
-                                <span className="text-xs font-mono text-gray-400">
-                                    {language === 'python' ? 'solution.py' : 'solution.c'}
-                                </span>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <div className="text-mono text-primary font-bold">
-                                    ⏱️ {Math.floor(elapsedTime / 60)}:{String(elapsedTime % 60).padStart(2, '0')}
-                                </div>
-                                <button
-                                    onClick={handleRun}
-                                    disabled={status === 'RUNNING' || solvedParts[activeTask]}
-                                    className={`flex items-center gap-2 px-4 py-1 rounded text-sm font-bold transition-colors ${solvedParts[activeTask] ? 'bg-success text-black cursor-default' :
-                                        status === 'RUNNING' ? 'bg-gray-600 cursor-not-allowed' :
-                                            'bg-primary text-black hover:bg-white'
-                                        }`}
-                                >
-                                    {status === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-                                    {solvedParts[activeTask] ? 'SOLVED' : status === 'RUNNING' ? 'TESTING' : 'SUBMIT'}
-                                </button>
-                            </div>
-                        </div>
-                        <Editor
-                            height="100%"
-                            defaultLanguage={language === 'python' ? 'python' : 'c'}
-                            value={code}
-                            onChange={(value) => setCode(value)}
-                            theme="vs-dark"
-                            options={{ minimap: { enabled: false }, fontSize: 14 }}
-                        />
+                {/* Right: Editor */}
+                <div className="lg:col-span-2 glass-card overflow-hidden flex flex-col border-primary/30">
+                    <div className="bg-white/5 p-2 px-4 flex justify-between items-center text-xs font-mono text-gray-500 border-b border-white/5">
+                        <span>{language === 'c' ? 'main.c' : 'script.py'}</span>
+                        <span>AI ASSISTED ENVIRONMENT</span>
                     </div>
-
-                    <div className="glass-card h-32 p-4 font-mono text-sm overflow-auto bg-black border border-white/10">
-                        {output || <span className="text-gray-600">// Execution results...</span>}
-                    </div>
+                    <Editor
+                        height="100%"
+                        defaultLanguage={language}
+                        language={language}
+                        value={code}
+                        onChange={(val) => setCode(val)}
+                        theme="vs-dark"
+                        options={{
+                            minimap: { enabled: false },
+                            fontSize: 14,
+                            scrollBeyondLastLine: false,
+                            automaticLayout: true,
+                        }}
+                    />
                 </div>
             </div>
         </div>

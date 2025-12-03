@@ -13,7 +13,8 @@ export const initializeTeam = (teamId) => {
   const initialState = {
     currentPhaseIndex: 0,
     phaseProgress: {
-      1: { completed: false, currentQuestion: 0 },
+      // Updated Phase 1 to include 'order' and 'startTime'
+      1: { completed: false, currentQuestion: 0, order: null, startTime: null },
       2: { completed: false, currentQuestion: 0 },
       3: { completed: false },
       4: { completed: false, currentQuestion: 0 },

@@ -1,27 +1,42 @@
 [
     {
         "id": 1,
-        "question": "Find QR at library.",
-        "answer": "1960"
+        "module": "PERIMETER_WATCH",
+        "log": "[SYSTEM LOG 09:00:00]: FATAL EXCEPTION IN INGRESS PROTOCOL. [KERNEL DUMP]: The 'Cerberus' logic gate protecting Port 0 has collapsed. AetherOS cannot verify the physical credentials of incoming traffic. The authentication key is held by a biological entity stationed at the network's edge. This entity is a paradox: it possesses eyes that never blink and a uniform that commands authority, yet it processes no digital data. It stands as the 'First Watcher' where the external world meets our domain.",
+        "task": "Identify the location of Cerberus to find Fragment 01.",
+        "hint": "Seek the uniformed eyes that watch the entry.",
+        "answer": "Chaos@@"
     },
     {
         "id": 2,
-        "question": "Find QR at canteen.",
-        "answer": "SPARK"
+        "module": "THERMAL_BRIDGE",
+        "log": "[SYSTEM LOG 09:08:15]: THERMAL RUNAWAY DETECTED. [KERNEL DUMP]: The processing bridge connecting the 'Theoretical Unit' and the 'Experimental Unit' is overheating. The system requires 'Coolant R-W'. This coolant is dispensed from a node painted in the colours of high alert (Red & White). It sits in the open void, bridging the gap between theory and practice.",
+        "task": "Locate the Red-White coolant node to retrieve Fragment 02.",
+        "hint": "Between the books and the Systems.",
+        "answer": "Al%#pha"
     },
     {
         "id": 3,
-        "question": "Find QR at auditorium.",
-        "answer": "INNOVATE"
+        "module": "OUTBOUND_PATH (Aptitude)",
+        "log": "[SYSTEM LOG 09:15:30]: EGRESS PACKET LOSS. [KERNEL DUMP]: Data is dropping on the road to the System Termination Point (Exit). The error is located at a 'Latency Buffer'—a static object designed for rest. It is the 6th Node in the sequence of buffers lining the asphalt path leading away from the core.",
+        "task": "Find the 6th buffer on the exit road to retrieve Fragment 03.",
+        "hint": "A place to rest on the journey out.",
+        "answer": "Pri!!me"
     },
     {
         "id": 4,
-        "question": "Find QR at main gate.",
-        "answer": "WELCOME"
+        "module": "INTERNAL_FUEL (Aptitude)",
+        "log": "[SYSTEM LOG 09:22:45]: LABORATORY GRID FAILURE. [KERNEL DUMP]: A rogue subsystem inside the Lab Architecture is draining power. This subsystem is adjacent to a 'Triangular Fuel Cell' vendor. The specific coordinates point to the 'Dormancy Zone' for mobile machines nested within the lab structure.",
+        "task": "Search the internal parking zone to retrieve Fragment 04.",
+        "hint": "Near the smell of fried snacks and sleeping engines.",
+        "answer": "Gam+ma"
     },
     {
         "id": 5,
-        "question": "Find QR at sports complex.",
-        "answer": "VICTORY"
+        "module": "MASS_TRANSIT (Aptitude)",
+        "log": "[SYSTEM LOG 09:30:00]: DOCKING FAILURE. [KERNEL DUMP]: The 'Yellow Leviathans' cannot initialize. The error originates at the primary docking bay. This sector is heavily correlated with a 'Puffed Grain' data stream. Signal strength is highest near the wheels of the fleet.",
+        "task": "Find the Signal to retrieve Fragment 05.",
+        "hint": "Where the giant yellow carriers rest.",
+        "answer": "Be--ta"
     }
 ]

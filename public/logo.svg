@@ -1,0 +1,84 @@
+<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#14532d;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#4ade80;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#14532d;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="eleSkin" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4b5563;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1f2937;stop-opacity:1" />
+    </linearGradient>
+
+    <path id="textCurveTop" d="M 65,250 A 185,185 0 1,1 435,250" fill="none"/>
+    
+    <path id="textCurveBottom" d="M 60,250 A 190,190 0 0,0 440,250" fill="none"/>
+  </defs>
+
+  <circle cx="250" cy="250" r="245" fill="#020403" stroke="url(#ringGradient)" stroke-width="10" />
+  <circle cx="250" cy="250" r="215" fill="none" stroke="#d4af37" stroke-width="1" opacity="0.4" />
+
+  <g transform="translate(250, 250)" opacity="0.5">
+    <path d="M0,-160 Q30,-210 0,-230 Q-30,-210 0,-160" fill="#22c55e" />
+    <path d="M-60,-140 Q-90,-190 -120,-170 Q-90,-130 -60,-140" fill="#22c55e" />
+    <path d="M60,-140 Q90,-190 120,-170 Q90,-130 60,-140" fill="#22c55e" />
+    <path d="M-100,-80 Q-150,-100 -160,-60 Q-120,-40 -100,-80" fill="#22c55e" />
+    <path d="M100,-80 Q150,-100 160,-60 Q120,-40 100,-80" fill="#22c55e" />
+  </g>
+
+  <line x1="20" y1="250" x2="480" y2="250" stroke="#4ade80" stroke-width="3" opacity="0.7" filter="url(#neon-glow)" />
+
+  <g transform="translate(250, 250) scale(0.85)">
+    <g transform="translate(0, -30)"> <path d="M-60,-70 L-130,-40 Q-150,20 -110,60 L-70,40 Z" fill="#374151" stroke="#d4af37" stroke-width="2"/>
+        <path d="M60,-70 L130,-40 Q150,20 110,60 L70,40 Z" fill="#374151" stroke="#d4af37" stroke-width="2"/>
+        
+        <path d="M-65,-90 L65,-90 L75,10 L40,110 L-40,110 L-75,10 Z" fill="url(#eleSkin)" stroke="#d4af37" stroke-width="2"/>
+        
+        <path d="M-25,60 L25,60 L18,150 Q0,170 -18,150 Z" fill="#1f2937" stroke="#d4af37" stroke-width="1.5"/>
+        <line x1="-20" y1="80" x2="20" y2="80" stroke="#4ade80" stroke-width="2" filter="url(#neon-glow)"/>
+        <line x1="-15" y1="100" x2="15" y2="100" stroke="#4ade80" stroke-width="2" filter="url(#neon-glow)"/>
+        <line x1="-10" y1="120" x2="10" y2="120" stroke="#4ade80" stroke-width="2" filter="url(#neon-glow)"/>
+
+        <path d="M-40,110 Q-70,160 -50,190 L-40,180 Q-50,150 -30,120" fill="#fef3c7" stroke="#000" stroke-width="0.5"/>
+        <path d="M40,110 Q70,160 50,190 L40,180 Q50,150 30,120" fill="#fef3c7" stroke="#000" stroke-width="0.5"/>
+
+        <circle cx="-45" cy="-10" r="5" fill="#4ade80" filter="url(#neon-glow)"/>
+        <circle cx="45" cy="-10" r="5" fill="#4ade80" filter="url(#neon-glow)"/>
+
+        <path d="M0,-70 L-20,-40 L0,-10 L20,-40 Z" fill="none" stroke="#4ade80" stroke-width="2" filter="url(#neon-glow)"/>
+        <circle cx="0" cy="-40" r="5" fill="#4ade80" filter="url(#neon-glow)"/>
+
+        <g transform="translate(0, 180)">
+            <path d="M-60,0 C-30,15 0,-5 0,-5 C0,-5 30,15 60,0 L60,20 C30,35 0,10 0,10 C0,10 -30,35 -60,20 Z" 
+                fill="#111827" stroke="#d4af37" stroke-width="2" />
+            <g transform="translate(0, -15)" filter="url(#neon-glow)">
+            <circle cx="0" cy="0" r="10" fill="none" stroke="#4ade80" stroke-width="2"/>
+            <ellipse cx="0" cy="0" rx="20" ry="6" stroke="#4ade80" stroke-width="1" transform="rotate(45)"/>
+            <ellipse cx="0" cy="0" rx="20" ry="6" stroke="#4ade80" stroke-width="1" transform="rotate(-45)"/>
+            </g>
+        </g>
+    </g>
+  </g>
+
+  <text font-family="Verdana, sans-serif" font-weight="bold" font-size="36" fill="#bbf7d0" letter-spacing="4">
+    <textPath href="#textCurveTop" startOffset="50%" text-anchor="middle">
+      VIBRANCSE 2.0
+    </textPath>
+  </text>
+  
+  <text font-family="Verdana, sans-serif" font-weight="bold" font-size="34" fill="#bbf7d0" letter-spacing="3">
+    <textPath href="#textCurveBottom" startOffset="50%" text-anchor="middle">
+      2025
+    </textPath>
+  </text>
+
+</svg>

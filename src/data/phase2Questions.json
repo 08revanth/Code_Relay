@@ -1,17 +1,20 @@
 [
     {
         "id": 1,
-        "code": "int a=5; int b=10; cout<<a+b;",
-        "answer": "15"
+        "module": "SCHOLAR_TRACE",
+        "log": "[SYSTEM LOG 09:38:22]: NAVIGATIONAL OFFSET ERROR. The 'Day Scholar' module pathing is corrupt. Analyze the logic below. The code simulates a non-linear path with signal decay and boosts.",
+        "code": "def trace_path():\n    val = 10\n    # Simulating a complex 7-step path\n    for step in range(1, 8):\n        if step % 2 != 0: # Odd Steps\n            if step % 3 == 0:\n                val = val * 2  # Signal Boost\n            else:\n                val = val - step # Decay\n        else: # Even Steps\n            if val > 15:\n                val = val // 2 # Stabilization\n            else:\n                val = val + step # Accumulation\n    return \"SCHOLAR_NODE_\" + str(val)\n\nprint(trace_path())",
+        "outputAnswer": "SCHOLAR_NODE_5",
+        "hint": "It feeds those who travel daily.",
+        "finalAnswer": "Zeus!!"
     },
     {
         "id": 2,
-        "code": "for(int i=0; i<3; i++) cout<<i;",
-        "answer": "012"
-    },
-    {
-        "id": 3,
-        "code": "int x=10; if(x>5) cout<<'A'; else cout<<'B';",
-        "answer": "A"
+        "module": "HYDRAULIC_LIFT",
+        "log": "[SYSTEM LOG 09:45:10]: PRESSURE VALVE STUCK. Hydration unit pressure failure. The logic below uses pointer/index manipulation to track the water level.",
+        "code": "// C Language Logic\nint levels[] = {10, 25, 30, 15, 50};\nint *ptr = levels; \nfor(int i = 0; i < 3; i++) {\n    int val = *ptr;\n    if (val % 2 == 0) { \n        if (val < 20) ptr++; \n        else { *ptr = val - 5; ptr++; }\n    } else { \n        ptr--; \n        *ptr = *ptr + 10; \n    }\n}\nprintf(\"Level_%ld\", (ptr - levels) + 1);",
+        "outputAnswer": "Level_2",
+        "hint": "Ascend to find the water.",
+        "finalAnswer": "Ome--ga"
     }
 ]

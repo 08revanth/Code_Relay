@@ -2,13 +2,24 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../contexts/GameContext';
 import { motion } from 'framer-motion';
-import { Lock, CheckCircle, Play } from 'lucide-react';
+import { 
+    Lock, CheckCircle, Play, MapPin, 
+    Terminal, RefreshCw, Bug, Cpu, Shield 
+} from 'lucide-react';
+
+const PHASE_CONFIG = {
+    1: { name: "PERIMETER BREACH", icon: MapPin, desc: "Physical QR Hunt" },
+    2: { name: "LOGIC GATE", icon: Terminal, desc: "Output Prediction" },
+    3: { name: "PROTOCOL SWAP", icon: RefreshCw, desc: "Role Reversal" },
+    4: { name: "SYSTEM PATCH", icon: Bug, desc: "Code Debugging" },
+    5: { name: "CORE OVERRIDE", icon: Cpu, desc: "Final Coding Challenge" }
+};
 
 const TeamDashboard = () => {
     const { teamId, getCurrentPhaseId, gameState, teamPhaseOrder } = useGame();
     const navigate = useNavigate();
 
-    if (!gameState) return <div>Loading...</div>;
+    if (!gameState) return <div className="text-center mt-20 text-primary">SYNCING...</div>;
 
     const currentPhaseId = getCurrentPhaseId();
     const phaseOrder = teamPhaseOrder[teamId];
@@ -19,7 +30,6 @@ const TeamDashboard = () => {
             return;
         }
 
-        // Map phase ID to route
         const routes = {
             1: '/phase1',
             2: '/phase2',
@@ -27,68 +37,104 @@ const TeamDashboard = () => {
             4: '/phase4',
             5: '/final-phase'
         };
-
         navigate(routes[currentPhaseId]);
     };
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto pb-10">
+            {/* Status Header */}
             <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="glass-card p-8 mb-8 text-center relative overflow-hidden"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-card p-8 mb-8 text-center relative overflow-hidden group"
             >
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary"></div>
+                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                <h2 className="text-3xl font-bold mb-2">MISSION CONTROL</h2>
-                <p className="text-gray-400 mb-8">STATUS: <span className="text-primary">ACTIVE</span></p>
-
-                <div className="flex justify-center items-center mb-8">
-                    <div className="text-6xl font-bold text-white neon-text">
-                        {currentPhaseId === 'COMPLETED' ? 'ALL DONE' : `PHASE ${currentPhaseId}`}
-                    </div>
+                <h2 className="text-xl font-bold mb-2 text-gray-400 tracking-widest">CURRENT OBJECTIVE</h2>
+                
+                <div className="my-6">
+                    {currentPhaseId === 'COMPLETED' ? (
+                        <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-success to-primary neon-text">
+                            ALL SYSTEMS GO
+                        </h1>
+                    ) : (
+                        <div className="flex flex-col items-center">
+                            <span className="text-6xl md:text-7xl font-black text-white neon-text mb-2">
+                                PHASE {currentPhaseId}
+                            </span>
+                            <span className="text-xl text-primary font-bold tracking-widest uppercase">
+                                {PHASE_CONFIG[currentPhaseId]?.name}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 <button
                     onClick={handleStartPhase}
-                    className="bg-primary text-black font-bold text-xl px-12 py-4 rounded-full hover:bg-white hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(0,243,255,0.5)] flex items-center gap-2 mx-auto"
+                    className="relative z-10 bg-white text-black font-black text-lg px-10 py-4 rounded-full hover:bg-primary hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-3 mx-auto"
                 >
-                    {currentPhaseId === 'COMPLETED' ? 'ENTER FINAL CHAMBER' : 'INITIATE PROTOCOL'} <Play size={24} fill="black" />
+                    {currentPhaseId === 'COMPLETED' ? 'ENTER FINAL CHAMBER' : 'ENGAGE MISSION'} 
+                    <Play size={20} fill="black" />
                 </button>
             </motion.div>
 
+            {/* Timeline / Grid */}
             <div className="grid gap-4">
+                <h3 className="text-gray-500 font-bold mb-2 pl-2">MISSION TRAJECTORY</h3>
+                
                 {phaseOrder.map((pId, index) => {
                     const isCompleted = index < gameState.currentPhaseIndex;
                     const isCurrent = index === gameState.currentPhaseIndex;
                     const isLocked = index > gameState.currentPhaseIndex;
+                    const PhaseIcon = PHASE_CONFIG[pId].icon;
 
                     return (
-                        <div
+                        <motion.div
                             key={index}
-                            className={`p-4 rounded-lg border flex items-center justify-between ${isCurrent ? 'bg-primary/10 border-primary' :
-                                    isCompleted ? 'bg-success/10 border-success' :
-                                        'bg-white/5 border-white/10 opacity-50'
-                                }`}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className={`p-6 rounded-xl border flex items-center justify-between transition-all duration-300 ${
+                                isCurrent 
+                                ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(0,243,255,0.1)] scale-[1.02]' 
+                                : isCompleted 
+                                    ? 'bg-success/5 border-success/30 opacity-70' 
+                                    : 'bg-black/40 border-white/5 opacity-50 grayscale'
+                            }`}
                         >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${isCurrent ? 'bg-primary text-black' :
-                                        isCompleted ? 'bg-success text-black' :
-                                            'bg-gray-700 text-gray-400'
-                                    }`}>
-                                    {index + 1}
+                            <div className="flex items-center gap-6">
+                                {/* Number/Status Icon */}
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg border ${
+                                    isCurrent ? 'bg-primary text-black border-primary' :
+                                    isCompleted ? 'bg-success text-black border-success' :
+                                    'bg-transparent text-gray-500 border-gray-700'
+                                }`}>
+                                    {isCompleted ? <CheckCircle size={24} /> : index + 1}
                                 </div>
-                                <span className="text-lg font-bold">
-                                    {pId === 3 ? 'ROLE SWAP' : `PHASE ${pId}`}
-                                </span>
+
+                                {/* Text Info */}
+                                <div>
+                                    <h4 className={`text-xl font-black tracking-wide ${isCurrent ? 'text-white' : 'text-gray-400'}`}>
+                                        {PHASE_CONFIG[pId].name}
+                                    </h4>
+                                    <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
+                                        <PhaseIcon size={14} /> {PHASE_CONFIG[pId].desc}
+                                    </p>
+                                </div>
                             </div>
 
+                            {/* Right Side Status */}
                             <div>
-                                {isCompleted && <CheckCircle className="text-success" />}
-                                {isLocked && <Lock className="text-gray-500" />}
-                                {isCurrent && <span className="text-primary animate-pulse">IN PROGRESS</span>}
+                                {isCurrent && (
+                                    <span className="px-3 py-1 rounded bg-primary/20 text-primary text-xs font-bold border border-primary/50 animate-pulse">
+                                        IN PROGRESS
+                                    </span>
+                                )}
+                                {isLocked && <Lock className="text-gray-600" />}
+                                {isCompleted && <span className="text-success font-bold text-xs">COMPLETE</span>}
                             </div>
-                        </div>
+                        </motion.div>
                     );
                 })}
             </div>

@@ -1,18 +1,20 @@
 [
     {
         "id": 1,
-        "buggyCode": "#include <iostream>\nusing namespace std;\nint main() {\n  int a=5;\n  cout<<a // missing semicolon\n  return 0;\n}",
-        "buggyCodeC": "#include <stdio.h>\nint main() {\n  int a=5;\n  printf(\"%d\", a // missing semicolon\n  return 0;\n}",
-        "buggyCodePython": "a = 5\nprint(a # missing parenthesis",
-        "expectedOutput": "5",
-        "language_id": 54
+        "module": "INVENTORY_INDEX_ERROR",
+        "log": "[SYSTEM LOG 09:52:00]: The Sports & Recreation Physics Module is malfunctioning. The system attempts to remove items during iteration, causing it to skip over negative readings. Debug the faulty loop and restore accurate tracking.",
+        "language": "python",
+        "buggyCode": "def scan(values):\ntotal = 0\nlargest = values[0]\n\nfor v in values:\n    if v < 0\n        print(\"Neg:\", v)\n    elif v > largest:\n        largest = v\n\n    total += v\n\nprint(\"Total =\", total)\nprint(\"Largest =\", largest)\n\n\ndef main():\n    nums = [5, -3, 12, 7, 0]\n    scan(nums)\n\nmain()",
+        "hint": "Where energy is burned.",
+        "finalString": "Del@@ta"
     },
     {
         "id": 2,
-        "buggyCode": "#include <iostream>\nusing namespace std;\nint main() {\n  int x = 10;\n  if (x = 5) { // assignment instead of comparison\n    cout << \"Equal\";\n  } else {\n    cout << \"Not Equal\";\n  }\n  return 0;\n}",
-        "buggyCodeC": "#include <stdio.h>\nint main() {\n  int x = 10;\n  if (x = 5) { // assignment instead of comparison\n    printf(\"Equal\");\n  } else {\n    printf(\"Not Equal\");\n  }\n  return 0;\n}",
-        "buggyCodePython": "x = 10\nif x = 5: # assignment in condition\n    print(\"Equal\")\nelse:\n    print(\"Not Equal\")",
-        "expectedOutput": "Not Equal",
-        "language_id": 54
+        "module": "RESOURCE_CORE_LOOP_FAILURE",
+        "log": "[SYSTEM LOG 09:58:00]: The Mess Allocation Subsystem distribution loop has started producing phantom portions. The loop continues to run even when food stores are empty. Debug the corrupted module logic.",
+        "language": "c",
+        "buggyCode": "#include <stdio.h>\n\nvoid printStats(int arr[], int n) {\n    int min = arr[0];\n    int max = arr[0];\n\n    for (int i = 0; i < n; i++) {\n        if (arr[i] < min) \n            min = arr[i];      \n\n        if (arr[i] > max)       \n            max = arr[i]\n    }\n\n    printf(\"Min: %d\\n\", min);\n    printf(\"Max: %d\\n\", max);\n\nint main() {\n    int nums[5] = {8, 2, 9, 1, 4};\n    printStats(nums, 5);\n\n    printf(\"Done\\n\";\n    return 0\n}",
+        "hint": "Where the masses gather to gain energy.",
+        "finalString": "Roo#t"
     }
 ]
